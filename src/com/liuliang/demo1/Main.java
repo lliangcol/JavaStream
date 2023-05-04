@@ -17,19 +17,23 @@ import java.util.stream.Stream;
  */
 public class Main {
     public static void main(String[] args) {
+        // 0. Stream.iterate
+        Stream<Integer> stream0 = Stream.iterate(0, i -> i + 3).limit(5);
+        stream0.forEach(System.out::println);
+
         // 1. Stream.of
         Stream<String> stream1 = Stream.of("a", "b", "c");
         stream1.forEach(System.out::println);
 
-        // 2. 数组创建
+        // 2. 数组创建 java.util.Arrays.stream(T[] array)
         Stream<String> stream2 = Arrays.stream(new String[]{"A", "B", "C"});
         stream2.forEach(System.out::println);
 
-        // 3. 集合创建
+        // 3. 集合创建 java.util.Collection.stream()
         Stream<String> stream3 = List.of("1", "2", "3").stream();
         stream3.forEach(System.out::println);
 
-        // 4. Supplier
+        // 4. Stream.generate Supplier
         Stream<Integer> natual = Stream.generate(new NatualSupplier());
         // 无限序列转换为有限序列再输出
         natual.limit(10).forEach(System.out::println);
