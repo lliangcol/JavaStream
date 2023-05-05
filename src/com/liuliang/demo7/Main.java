@@ -6,6 +6,119 @@ import java.util.stream.Stream;
 
 public class Main {
     public static void main(String[] args) {
+        // 流可以进行合并、去重、限制、跳过等操作
+        // 合并（concat）
+        // concat：合并两个流，返回一个由两个流的所有元素组成的流
+        Stream<Integer> stream1 = Stream.of(1, 2, 3);
+        Stream<Integer> stream2 = Stream.of(4, 5, 6);
+        Stream<Integer> stream3 = Stream.concat(stream1, stream2);
+        stream3.forEach(System.out::println);
+
+        System.out.println("================================");
+        // distinct：去重，通过流所生成元素的hashCode()和equals()去除重复元素
+        Stream<Integer> stream4 = Stream.of(2, 4, 6, 8, 10);
+        Stream<Integer> stream5 = Stream.concat(Stream.of(1, 2, 3, 4, 5, 6), stream4).distinct();
+        stream5.forEach(System.out::println);
+
+        // limit：限制从流中获得前n个数据
+        List<Integer> integerList1 = Stream.iterate(1, i -> i + 2).limit(10).collect(Collectors.toList());
+        System.out.println("integerList1 = " + integerList1);
+        // skip：跳过前n个数据
+        List<Integer> integerList2 = Stream.iterate(1, i -> i + 2).skip(3).limit(10).collect(Collectors.toList());
+        System.out.println("integerList2 = " + integerList2);
+    }
+
+    public static void main7(String[] args) {
+        // 排序（sorted）
+        // sorted()：自然排序，流中元素需实现Comparable接口
+        // sorted(Comparator com)：定制排序，自定义Comparator排序器
+
+        List<Person> personList = initPersons();
+        List<String> names1 = personList.stream().sorted(Comparator.comparing(Person::getSalary)).map(Person::getName).collect(Collectors.toList());
+        System.out.println("names1 = " + names1);
+        List<String> names2 = personList.stream().sorted(Comparator.comparing(Person::getSalary).reversed()).map(Person::getName).collect(Collectors.toList());
+        System.out.println("names2 = " + names2);
+
+        List<String> names3 = personList.stream().sorted(Comparator.comparing(Person::getSalary).thenComparing(Person::getAge)).map(Person::getName).collect(Collectors.toList());
+        System.out.println("names3 = " + names3);
+        List<String> names4 = personList.stream().sorted((p1, p2) -> {
+            if (p1.getSalary() == p2.getSalary()) {
+                return p2.getAge() - p1.getAge();
+            } else {
+                return p2.getSalary() - p1.getSalary();
+            }
+        }).map(Person::getName).collect(Collectors.toList());
+        System.out.println("names4 = " + names4);
+    }
+
+    public static void main6(String[] args) {
+        // 收集（collect）
+        // collect：将流转换成其他形式，接收一个Collector接口的实现，用于给Stream中元素做汇总的方法
+        // 因为流不存储数据，那么在流中的元素完成处理后，需要将流中的数据重新归集到新的集合里
+        // Collector接口中方法的实现决定了如何对流执行收集操作（如收集到List、Set、Map）
+        // Collectors实用类提供了很多静态方法，可以方便地创建常见收集器实例
+
+        List<Integer> list1 = Arrays.asList(1, 6, 3, 4, 6, 7, 9, 6, 20);
+        List<Integer> list2 = list1.stream().filter(i -> i % 2 == 0).collect(Collectors.toList());
+        System.out.println("list2 = " + list2);
+        Set<Integer> set1 = list1.stream().filter(i -> i % 2 == 0).collect(Collectors.toSet());
+        System.out.println("set1 = " + set1);
+
+        List<Person> persons = initPersons();
+        Map<String, Person> map1 = persons.stream().filter(p -> p.getSalary() > 8000).collect(Collectors.toMap(Person::getName, p -> p));
+        System.out.println("map1 = " + map1);
+
+        // 统计（count、max、min、average、sum）
+        // 求总数
+        Long count = persons.stream().collect(Collectors.counting());
+        System.out.println("count = " + count);
+
+        // 求平均工资
+        Double average = persons.stream().collect(Collectors.averagingDouble(Person::getSalary));
+        System.out.println("average = " + average);
+
+        // 求最高工资
+        Optional<Integer> max = persons.stream().map(Person::getSalary).collect(Collectors.maxBy(Integer::compare));
+        System.out.println("max = " + max.get());
+
+        // 求工资之和
+        Integer sum = persons.stream().collect(Collectors.summingInt(Person::getSalary));
+        System.out.println("sum = " + sum);
+
+        // 一次性统计所有信息
+        DoubleSummaryStatistics collect = persons.stream().collect(Collectors.summarizingDouble(Person::getSalary));
+        System.out.printf("%d %f %f %f \n", collect.getCount(), collect.getAverage(), collect.getMax(), collect.getSum());
+
+        // 分组（groupingBy）分区（partitioningBy）
+        // 分组是将流中的元素按照指定的分类进行收集，分区是分组的特殊情况，分区是将分组的key限制为true和false两种情况
+        Map<Boolean, List<Person>> part = persons.stream().collect(Collectors.partitioningBy(p -> p.getSalary() > 8000));
+        part.forEach((k, v) -> System.out.println(k + " " + v));
+
+        Map<String, List<Person>> group = persons.stream().collect(Collectors.groupingBy(Person::getSex));
+        group.forEach((k, v) -> System.out.println(k + " " + v));
+
+        Map<String, Map<String, List<Person>>> group1 = persons.stream().collect(Collectors.groupingBy(Person::getSex, Collectors.groupingBy(Person::getArea)));
+        group1.forEach((k, v) -> System.out.println(k + " " + v));
+
+        // 接合（joining）
+        // joining()方法可以将流中的元素用特定的连接符（没有的话，则直接连接）连接成一个字符串
+        String names = persons.stream().map(Person::getName).collect(Collectors.joining(","));
+        System.out.println("names = " + names);
+
+        // 归约（reducing）
+        // Collectors 类提供的 reducing 方法，相比于 stream 本身的 reduce 方法，增加了对自定义归约的支持
+        // reducing()方法接收三个参数：
+        // 1.初始值
+        // 2.一个Function<T, U>来将元素类型T转换成U
+        // 3.一个BinaryOperator<U>来将两个元素结合起来产生一个新值
+        Integer sum1 = persons.stream().collect(Collectors.reducing(0, Person::getSalary, Integer::sum));
+        System.out.println("sum1 = " + sum1);
+
+        String names1 = persons.stream().collect(Collectors.reducing("", Person::getName, (s1, s2) -> s1 == "" ? s2 : s1 + "," + s2));
+        System.out.println("names1 = " + names1);
+    }
+
+    public static void main5(String[] args) {
         // 归约（reduce）
         // 归约，也称缩减，是把一个流缩减成一个值，能实现对集合求和、求最值等操作
         // reduce()方法接收两个参数：
